@@ -70,7 +70,7 @@
         td.price-5 { background: rgba(0,139,133,0.05); }
         td.price-5.tier-start { border-left: 3px solid #008b85; }
         td.thickness { border-right: 2px solid #ddd; }
-        td.height, td.thickness { color: #666; font-size: 12px; }
+        td.height, td.thickness, td.spec-cell { color: #666; font-size: 12px; min-width: 60px; width: 60px; }
         .category-row td { background: linear-gradient(135deg, #00a19a 0%, #008b85 100%); color: white; font-weight: bold; text-align: left; padding: 12px 15px; font-size: 14px; }
         .sub-category-row td { background: #e8f5f4; color: #00756f; font-weight: 600; text-align: left; padding: 8px 15px 8px 30px; font-size: 13px; }
         .highlight { background: #fff3cd; padding: 1px 3px; border-radius: 3px; }
@@ -81,6 +81,10 @@
         footer { text-align: center; padding: 25px; color: #888; font-size: 0.85rem; }
         footer a { color: #00a19a; text-decoration: none; }
         footer a:hover { text-decoration: underline; }
+        .spec-col, .height-col, .wall-col { min-width: 60px; width: 60px; text-align: center; }
+        .spec-cell { text-align: center; }
+        .spec-link { text-decoration: none; font-size: 1.2em; opacity: 0.8; transition: opacity 0.2s; }
+        .spec-link:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -160,15 +164,16 @@
                 <table>
                     <thead>
                         <tr class="tier-header">
-                            <th colspan="4" class="product-info">Product Details</th>
+                            <th colspan="5" class="product-info">Product Details</th>
                             <th colspan="4" class="tier-10">10% Pricing</th>
                             <th colspan="4" class="tier-5">5% Pricing</th>
                         </tr>
                         <tr class="column-header">
                             <th class="left-align">Category</th>
                             <th class="left-align">Product SKU</th>
-                            <th>Height</th>
-                            <th>Wall</th>
+                            <th class="spec-col">Spec</th>
+                            <th class="height-col">Height</th>
+                            <th class="wall-col">Wall</th>
                             <th class="tier-start-10">1 Pole</th>
                             <th>2-3 Poles</th>
                             <th>4-7 Poles</th>
@@ -233,6 +238,19 @@ function populateFilters() {
         subCategories.map(s => `<option value="${s.replace(/"/g, '&quot;')}">${s}</option>`).join('');
 }
 
+function getSpecUrl(mainCategory) {
+    const specMap = {
+        'Round Non-Tapered Steel': 'https://portorlighting.com/media/spec/pt-rnts.pdf',
+        'Square Non-Tapered Steel': 'https://portorlighting.com/media/spec/pt-snts.pdf',
+        'Round Tapered Aluminium': 'https://portorlighting.com/media/spec/pt-rta.pdf',
+        'Round Non-Tapered Aluminium': 'https://portorlighting.com/media/spec/pt-rnta.pdf',
+        'Square Non-Tapered Aluminium': 'https://portorlighting.com/media/spec/pt-snta.pdf',
+        'Embedded Round Non-Tapered Aluminium': 'https://portorlighting.com/media/spec/pt-ernta.pdf',
+        'Embedded Square Non-Tapered Aluminium': 'https://portorlighting.com/media/spec/pt-snta.pdf'
+    };
+    return specMap[mainCategory] || '';
+}
+
 function renderTable(products, query = '') {
     let html = '';
     let lastMainCategory = '';
@@ -240,19 +258,22 @@ function renderTable(products, query = '') {
     
     products.forEach(p => {
         if (p.main_category !== lastMainCategory) {
-            html += `<tr class="category-row"><td colspan="12">${p.main_category}</td></tr>`;
+            html += `<tr class="category-row"><td colspan="13">${p.main_category}</td></tr>`;
             lastMainCategory = p.main_category;
             lastSubCategory = '';
         }
         
         if (p.sub_category && p.sub_category !== lastSubCategory) {
-            html += `<tr class="sub-category-row"><td colspan="12">${p.sub_category}</td></tr>`;
+            html += `<tr class="sub-category-row"><td colspan="13">${p.sub_category}</td></tr>`;
             lastSubCategory = p.sub_category;
         }
         
+        const specUrl = getSpecUrl(p.main_category);
+        const specCell = specUrl ? `<a href="${specUrl}" target="_blank" class="spec-link" title="View Spec Sheet">📄</a>` : '';
         html += `<tr>
             <td class="category"><span class="category-badge">${p.main_category ? p.main_category.split(' ')[0] : ''}</span></td>
             <td class="sku">${highlightText(p.sku, query)}</td>
+            <td class="spec-cell">${specCell}</td>
             <td class="height">${highlightText(p.pole_height, query)}</td>
             <td class="thickness">${highlightText(p.wall_thickness, query)}</td>
             <td class="price price-10 tier-start">${formatPrice(p.price_10_1)}</td>
@@ -267,7 +288,7 @@ function renderTable(products, query = '') {
     });
     
     if (products.length === 0) {
-        html = '<tr><td colspan="12" class="no-results"><h3>No products found</h3><p>Try adjusting your search or filters</p></td></tr>';
+        html = '<tr><td colspan="13" class="no-results"><h3>No products found</h3><p>Try adjusting your search or filters</p></td></tr>';
     }
     
     tableBody.innerHTML = html;
